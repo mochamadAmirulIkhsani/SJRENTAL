@@ -3,17 +3,9 @@
 import { NavFooter } from "@/components/nav-footer";
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar";
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { type NavItem } from "@/types";
-import { BookOpen, Folder, LayoutGrid } from "lucide-react";
+import { BookOpen, Folder, LayoutGrid, Bike, Users, Calendar, BarChart3 } from "lucide-react";
 import AppLogo from "./app-logo";
 import Link from "next/link";
 
@@ -22,6 +14,26 @@ const mainNavItems: NavItem[] = [
     title: "Dashboard",
     href: "/dashboard",
     icon: LayoutGrid,
+  },
+  {
+    title: "Motorcycles",
+    href: "/dashboard/motorcycles",
+    icon: Bike,
+  },
+  {
+    title: "Rentals",
+    href: "/dashboard/rentals",
+    icon: Calendar,
+  },
+  {
+    title: "Customers",
+    href: "/dashboard/customers",
+    icon: Users,
+  },
+  {
+    title: "Reports",
+    href: "/dashboard/reports",
+    icon: BarChart3,
   },
 ];
 

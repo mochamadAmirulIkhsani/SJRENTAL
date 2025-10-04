@@ -14,13 +14,196 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Example {
-  id      BigInt  @id @default(autoincrement())
-  name    String
-  age     Int
-  address String
-  userId  String? @map("user_id")
-  user    User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+// Motorcycle Management
+model Motorcycle {
+  id          String   @id @default(cuid())
+  brand       String
+  model       String
+  year        Int
+  color       String
+  plateNumber String   @unique @map("plate_number")
+  engineSize  Int      @map("engine_size") // in CC
+  status      MotorcycleStatus @default(AVAILABLE)
+  condition   String?  // Any notes about condition
+  dailyRate   Decimal  @map("daily_rate") @db.Decimal(10, 2)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  rentals     Rental[]
+  expenses    Expense[]
+  
+  @@map("motorcycles")
+}
+
+enum MotorcycleStatus {
+  AVAILABLE
+  RENTED
+  MAINTENANCE
+  OUT_OF_SERVICE
+}
+
+// Customer Management
+model Customer {
+  id          String   @id @default(cuid())
+  name        String
+  email       String?  @unique
+  phone       String
+  address     String?
+  licenseNumber String @unique @map("license_number")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  rentals     Rental[]
+  
+  @@map("customers")
+}
+
+// Rental Management
+model Rental {
+  id          String      @id @default(cuid())
+  motorcycleId String     @map("motorcycle_id")
+  customerId  String      @map("customer_id")
+  startDate   DateTime    @map("start_date")
+  endDate     DateTime?   @map("end_date")
+  plannedEndDate DateTime @map("planned_end_date")
+  dailyRate   Decimal     @db.Decimal(10, 2) @map("daily_rate")
+  totalAmount Decimal?    @db.Decimal(10, 2) @map("total_amount")
+  deposit     Decimal     @db.Decimal(10, 2)
+  status      RentalStatus @default(ACTIVE)
+  notes       String?
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  
+  motorcycle  Motorcycle  @relation(fields: [motorcycleId], references: [id])
+  customer    Customer    @relation(fields: [customerId], references: [id])
+  income      Income[]
+  
+  @@map("rentals")
+}
+
+enum RentalStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+  OVERDUE
+}
+
+// Financial Management
+model Income {
+  id          String      @id @default(cuid())
+  description String
+  amount      Decimal     @db.Decimal(10, 2)
+  category    IncomeCategory
+  source      String?     // Additional source info
+  date        DateTime
+  rentalId    String?     @map("rental_id")
+  userId      String      @map("user_id")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  
+  rental      Rental?     @relation(fields: [rentalId], references: [id])
+  user        User        @relation(fields: [userId], references: [id])
+  
+  @@map("income")
+}
+
+enum IncomeCategory {
+  RENTAL_PAYMENT
+  DEPOSIT
+  LATE_FEE
+  DAMAGE_FEE
+  OTHER
+}
+
+model Expense {
+  id          String        @id @default(cuid())
+  description String
+  amount      Decimal       @db.Decimal(10, 2)
+  category    ExpenseCategory
+  date        DateTime
+  motorcycleId String?      @map("motorcycle_id")
+  receipt     String?       // URL to receipt image
+  vendor      String?       // Who we paid
+  userId      String        @map("user_id")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  
+  motorcycle  Motorcycle?   @relation(fields: [motorcycleId], references: [id])
+  user        User          @relation(fields: [userId], references: [id])
+  
+  @@map("expenses")
+}
+
+enum ExpenseCategory {
+  FUEL
+  MAINTENANCE
+  INSURANCE
+  REGISTRATION
+  REPAIR
+  SPARE_PARTS
+  CLEANING
+  MARKETING
+  OFFICE
+  OTHER
+}
+
+model Asset {
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  category    AssetCategory
+  value       Decimal     @db.Decimal(10, 2)
+  purchaseDate DateTime   @map("purchase_date")
+  condition   String?
+  location    String?
+  userId      String      @map("user_id")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  
+  user        User        @relation(fields: [userId], references: [id])
+  
+  @@map("assets")
+}
+
+enum AssetCategory {
+  MOTORCYCLE
+  EQUIPMENT
+  TOOLS
+  FURNITURE
+  ELECTRONICS
+  PROPERTY
+  OTHER
+}
+
+// AI Insights and Analytics
+model AiInsight {
+  id          String      @id @default(cuid())
+  title       String
+  content     String      @db.Text
+  category    InsightCategory
+  data        Json?       // Store related data/metrics
+  priority    Priority    @default(MEDIUM)
+  userId      String      @map("user_id")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  
+  user        User        @relation(fields: [userId], references: [id])
+  
+  @@map("ai_insights")
+}
+
+enum InsightCategory {
+  FINANCIAL_TREND
+  MOTORCYCLE_PERFORMANCE
+  CUSTOMER_BEHAVIOR
+  MAINTENANCE_ALERT
+  REVENUE_OPPORTUNITY
+  COST_OPTIMIZATION
+  RISK_WARNING
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
 }
 
 model User {
@@ -30,11 +213,23 @@ model User {
   avatar        String?
   emailVerified DateTime? @map("email_verified")
   password      String?
+  role          UserRole  @default(OWNER)
   accounts      Account[]
   sessions      Session[]
-  examples      Example[]
+  
+  // Business relationships
+  income        Income[]
+  expenses      Expense[]
+  assets        Asset[]
+  aiInsights    AiInsight[]
 
   @@map("users")
+}
+
+enum UserRole {
+  OWNER
+  MANAGER
+  EMPLOYEE
 }
 
 model Account {

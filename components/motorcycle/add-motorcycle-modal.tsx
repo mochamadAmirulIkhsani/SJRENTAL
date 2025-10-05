@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { createMotorcycle } from "@/actions/motorcycle.action";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,22 @@ interface AddMotorcycleModalProps {
 export function AddMotorcycleModal({ children }: AddMotorcycleModalProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const resetForm = () => {
+    if (formRef.current) {
+      formRef.current.reset();
+    }
+  };
+
+  const handleOpenChange = (newOpen: boolean) => {
+    setOpen(newOpen);
+    if (!newOpen) {
+      // Reset form when modal is closed
+      resetForm();
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -37,7 +53,7 @@ export function AddMotorcycleModal({ children }: AddMotorcycleModalProps) {
     try {
       await createMotorcycle(data);
       toast.success("Motorcycle added successfully!");
-      e.currentTarget.reset();
+      resetForm();
       setOpen(false);
     } catch (error) {
       toast.error("Failed to add motorcycle");
@@ -48,7 +64,7 @@ export function AddMotorcycleModal({ children }: AddMotorcycleModalProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
@@ -56,7 +72,7 @@ export function AddMotorcycleModal({ children }: AddMotorcycleModalProps) {
           <DialogDescription>Add a new motorcycle to your rental fleet</DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="brand">Brand</Label>
@@ -101,7 +117,7 @@ export function AddMotorcycleModal({ children }: AddMotorcycleModalProps) {
           </div>
 
           <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={loading}>
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={loading}>
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
